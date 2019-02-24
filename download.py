@@ -10,7 +10,7 @@ def locate_url_txt(parent_path):
     for file in files:
         if path.isdir(file):
             locate_url_txt(file)
-        elif file.split('/')[-1] == "urls.txt":
+        elif path.basename(file) == "urls.txt":
             print("found {}".format(file))
             download_urls(file)
 

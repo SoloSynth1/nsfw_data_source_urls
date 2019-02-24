@@ -102,10 +102,5 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.mp4
-*.webm
-.idea
+raw_data/*
+!raw_data/*.txt

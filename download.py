@@ -21,16 +21,15 @@ def download_urls(file_path, thread_count=50):
         urls = f.read().split('\n')
     valid_urls = [(url, get_file_name(url, file_path)) for url in urls if not path.isfile(get_file_name(url, file_path))]
     url_count = len(valid_urls)
-    idx = 0
-    while idx < url_count:
-        endpoint = min(url_count, idx+thread_count)
-        threads = [threading.Thread(target=download, args=url_tuple) for url_tuple in valid_urls[idx:endpoint]]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
-        idx += thread_count
+    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count,url_count))]
+    for thread in threads:
+        thread.start()
 
+
+def download_manager(urls_pool):
+    while urls_pool:
+        url, file_name = urls_pool.pop(0)
+        download(url, file_name)
 
 def download(url, file_name, timeout=5, retries_max=3):
     print("{}  ==>  {}...".format(url, file_name))

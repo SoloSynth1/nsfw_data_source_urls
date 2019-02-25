@@ -15,7 +15,7 @@ def locate_url_txt(parent_path):
             download_urls(file)
 
 
-def download_urls(file_path, thread_count=50):
+def download_urls(file_path, thread_count=300):
     with open(file_path, 'r') as f:
         urls = f.read().split('\n')
     valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url, file_path))]
@@ -23,6 +23,8 @@ def download_urls(file_path, thread_count=50):
     threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count, url_count))]
     for thread in threads:
         thread.start()
+    for thread in threads:
+        thread.join()
 
 
 def download_manager(urls_pool):
@@ -31,7 +33,7 @@ def download_manager(urls_pool):
         download(url, file_name)
 
 
-def download(url, file_name, timeout=5, retries_max=3):
+def download(url, file_name, timeout=10, retries_max=1):
     print("{}  ==>  {}...".format(url, file_name))
     retries = 0
     while retries <= retries_max:

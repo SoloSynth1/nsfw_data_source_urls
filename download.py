@@ -71,9 +71,10 @@ def download_manager(url_generator):
             break
 
 
-def download(url, file_name, timeout=10.0, retries_max=1):
+def download(url, file_name, timeout=5.0, retries_max=1):
     print("{}  ==>  {}...".format(url, file_name))
     retries = 0
+    response = None
     while retries <= retries_max:
         try:
             response = urllib3.PoolManager().request('GET', url, timeout=timeout)
@@ -85,7 +86,7 @@ def download(url, file_name, timeout=10.0, retries_max=1):
             print("error: {}".format(e))
             retries += 1
             continue
-    response = None
+    del response
 
 
 def get_file_name(url, file_path):

@@ -18,30 +18,30 @@ def locate_url_txt(parent_path, url_files=None):
     return url_files
 
 
-def generate_download_list(url_files):
-    valid_urls = []
+def url_generator(url_files):
     for file_path in url_files:
         with open(file_path, 'r') as f:
             urls = f.read().split('\n')
-            valid_urls += [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
-            print("processed {}".format(file_path))
-    print("URL list generation complete, {} files".format(len(valid_urls)))
-    return valid_urls
+            valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
+            while valid_urls:
+                yield valid_urls.pop(0)
 
 
 def download_urls(valid_urls, thread_count=500):
-    url_count = len(valid_urls)
-    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count, url_count))]
+    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(thread_count)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
 
-def download_manager(urls_pool):
-    while urls_pool:
-        url, file_name = urls_pool.pop(0)
-        download(url, file_name)
+def download_manager(url_generator):
+    while True:
+        try:
+            url, file_name = next(url_generator)
+            download(url, file_name)
+        except StopIteration:
+            break
 
 
 def download(url, file_name, timeout=10, retries_max=1):
@@ -70,6 +70,6 @@ def write(file_binary, file_name):
 
 if __name__ == "__main__":
     url_files = locate_url_txt(data_path)
-    valid_urls = generate_download_list(url_files)
-    download_urls(valid_urls)
+    url_gen = url_generator(url_files)
+    download_urls(url_gen)
     print("process finished")

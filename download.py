@@ -1,6 +1,6 @@
 import threading
 from os import path, listdir
-import requests
+import urllib3
 import argparse
 
 
@@ -55,32 +55,38 @@ def url_generator(url_files):
 
 
 def download_urls(valid_urls, thread_count=100):
-    threads = [threading.Thread(target=download, args=(valid_urls,)) for _ in range(thread_count)]
+    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(thread_count)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
 
-def download(url_generator, timeout=10, retries_max=1):
+def download_manager(url_generator):
     while True:
         try:
             url, file_name = url_generator.next()
-            print("{}  ==>  {}...".format(url, file_name))
-            retries = 0
-            while retries <= retries_max:
-                try:
-                    response = requests.get(url, timeout=timeout)
-                    if response.status_code < 400:
-                        write(response.content, file_name)
-                        break
-                    retries += 1
-                except Exception as e:
-                    print("error: {}".format(e))
-                    retries += 1
-                    continue
+            download(url, file_name)
         except StopIteration:
             break
+
+
+def download(url, file_name, timeout=10.0, retries_max=1):
+    print("{}  ==>  {}...".format(url, file_name))
+    retries = 0
+    while retries <= retries_max:
+        try:
+            response = urllib3.PoolManager().request('GET', url, timeout=timeout)
+            if response.status < 400:
+                write(response.content, file_name)
+                break
+            retries += 1
+        except Exception as e:
+            print("error: {}".format(e))
+            retries += 1
+            continue
+
+
 
 def get_file_name(url, file_path):
     return path.join(path.dirname(path.realpath(file_path)), url.split('?')[0].split('/')[-1])
@@ -99,6 +105,7 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
+    urllib3.disable_warnings()
     args = parse_arguments()
     url_files = locate_url_txt(data_path)
     url_gen = url_generator(url_files)

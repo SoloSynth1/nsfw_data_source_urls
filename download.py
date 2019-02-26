@@ -14,20 +14,21 @@ def locate_url_txt(parent_path):
         elif path.basename(file) == "urls.txt":
             print("found {}".format(file))
             url_files.append(file)
-            # download_urls(file)
     return url_files
 
 
-def generate_donwload_list(url_files):
+def generate_download_list(url_files):
+    valid_urls = []
     for file_path in url_files:
         with open(file_path, 'r') as f:
             urls = f.read().split('\n')
-        valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
+            valid_urls.append([(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))])
     print("URL list generation complete, {} files".format(len(valid_urls)))
     return valid_urls
 
 
 def download_urls(valid_urls, thread_count=500):
+    url_count = len(valid_urls)
     threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count, url_count))]
     for thread in threads:
         thread.start()

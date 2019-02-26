@@ -63,7 +63,7 @@ def download_urls(valid_urls, thread_count=500):
 def download_manager(url_generator):
     while True:
         try:
-            url, file_name = next(url_generator)
+            url, file_name = url_generator.next()
             download(url, file_name)
         except StopIteration:
             break

@@ -1,6 +1,8 @@
 import threading
 from os import path, listdir
 import requests
+import argparse
+
 
 data_path = path.abspath("./raw_data")
 
@@ -78,8 +80,8 @@ def download(url, file_name, timeout=10, retries_max=1):
             if response.status_code < 400:
                 write(response.content, file_name)
                 break
-        except:
-            continue
+        except Exception as e:
+            print("error: {}".format(e))
         finally:
             retries += 1
 
@@ -93,8 +95,19 @@ def write(file_binary, file_name):
         f.write(file_binary)
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='NSFW Data Source Downloader')
+    parser.add_argument('-n', '--thread-counts', help='Download thread counts', type=int, required=False)
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
+    args = parse_arguments()
     url_files = locate_url_txt(data_path)
     url_gen = url_generator(url_files)
-    download_urls(url_gen)
+    if args.thread_counts and args.thread_counts > 0:
+        download_urls(url_gen, args.thread_counts)
+    else:
+        download_urls(url_gen)
     print("process finished")

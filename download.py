@@ -80,10 +80,12 @@ def download(url, file_name, timeout=10, retries_max=1):
             if response.status_code < 400:
                 write(response.content, file_name)
                 break
+            retries += 1
         except Exception as e:
             print("error: {}".format(e))
-        finally:
             retries += 1
+            continue
+
 
 
 def get_file_name(url, file_path):

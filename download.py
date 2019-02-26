@@ -79,6 +79,7 @@ def download(url, file_name, timeout=10.0, retries_max=1):
             response = urllib3.PoolManager().request('GET', url, timeout=timeout)
             if response.status < 400:
                 write(response.data, file_name)
+                response = None
                 break
             retries += 1
         except Exception as e:

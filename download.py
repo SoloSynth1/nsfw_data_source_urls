@@ -52,7 +52,7 @@ def url_generator(url_files):
                 yield valid_urls.pop(0)
 
 
-def download_urls(valid_urls, thread_count=200):
+def download_urls(valid_urls, thread_count=100):
     threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(thread_count)]
     for thread in threads:
         thread.start()

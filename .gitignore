@@ -105,3 +105,5 @@ venv.bak/
 raw_data/*
 !raw_data/*.txt
 .idea
+
+nohup.out

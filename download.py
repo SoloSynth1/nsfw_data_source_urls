@@ -5,32 +5,68 @@ import requests
 data_path = path.abspath("./raw_data")
 
 
-def locate_url_txt(parent_path):
+class threadsafe_iter:
+    """Takes an iterator/generator and makes it thread-safe by
+    serializing call to the `next` method of given iterator/generator.
+    """
+    def __init__(self, it):
+        self.it = it
+        self.lock = threading.Lock()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        with self.lock:
+            return next(self.it)
+
+
+def threadsafe_generator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
+
+
+def locate_url_txt(parent_path, url_files=None):
     files = [path.join(parent_path, file) for file in listdir(parent_path)]
+    if not url_files:
+        url_files = []
     for file in files:
         if path.isdir(file):
-            locate_url_txt(file)
+            url_files = locate_url_txt(file, url_files)
         elif path.basename(file) == "urls.txt":
             print("found {}".format(file))
-            download_urls(file)
+            url_files.append(file)
+    return url_files
 
 
-def download_urls(file_path, thread_count=300):
-    with open(file_path, 'r') as f:
-        urls = f.read().split('\n')
-    valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url, file_path))]
-    url_count = len(valid_urls)
-    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count, url_count))]
+@threadsafe_generator
+def url_generator(url_files):
+    for file_path in url_files:
+        with open(file_path, 'r') as f:
+            urls = f.read().split('\n')
+            valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
+            while valid_urls:
+                yield valid_urls.pop(0)
+
+
+def download_urls(valid_urls, thread_count=100):
+    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(thread_count)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
 
-def download_manager(urls_pool):
-    while urls_pool:
-        url, file_name = urls_pool.pop(0)
-        download(url, file_name)
+def download_manager(url_generator):
+    while True:
+        try:
+            url, file_name = url_generator.next()
+            download(url, file_name)
+        except StopIteration:
+            break
 
 
 def download(url, file_name, timeout=10, retries_max=1):
@@ -58,4 +94,7 @@ def write(file_binary, file_name):
 
 
 if __name__ == "__main__":
-    locate_url_txt(data_path)
+    url_files = locate_url_txt(data_path)
+    url_gen = url_generator(url_files)
+    download_urls(url_gen)
+    print("process finished")

@@ -23,7 +23,7 @@ def generate_download_list(url_files):
     for file_path in url_files:
         with open(file_path, 'r') as f:
             urls = f.read().split('\n')
-            valid_urls.append([(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))])
+            valid_urls += [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
             print("processed {}".format(file_path))
     print("URL list generation complete, {} files".format(len(valid_urls)))
     return valid_urls

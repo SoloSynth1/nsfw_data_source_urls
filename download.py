@@ -15,8 +15,7 @@ def locate_url_txt(parent_path):
             print("found {}".format(file))
             url_files.append(file)
             # download_urls(file)
-    valid_urls = generate_donwload_list(url_files)
-    download_urls(valid_urls)
+    return url_files
 
 
 def generate_donwload_list(url_files):
@@ -67,4 +66,6 @@ def write(file_binary, file_name):
 
 
 if __name__ == "__main__":
-    locate_url_txt(data_path)
+    url_files = locate_url_txt(data_path)
+    valid_urls = generate_download_list(url_files)
+    download_urls(valid_urls)

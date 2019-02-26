@@ -5,12 +5,13 @@ import requests
 data_path = path.abspath("./raw_data")
 
 
-def locate_url_txt(parent_path):
+def locate_url_txt(parent_path, url_files=None):
     files = [path.join(parent_path, file) for file in listdir(parent_path)]
-    url_files = []
+    if not url_files:
+        url_files = []
     for file in files:
         if path.isdir(file):
-            locate_url_txt(file)
+            url_files = locate_url_txt(file, url_files)
         elif path.basename(file) == "urls.txt":
             print("found {}".format(file))
             url_files.append(file)
@@ -23,6 +24,7 @@ def generate_download_list(url_files):
         with open(file_path, 'r') as f:
             urls = f.read().split('\n')
             valid_urls.append([(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))])
+            print("")
     print("URL list generation complete, {} files".format(len(valid_urls)))
     return valid_urls
 
@@ -70,3 +72,4 @@ if __name__ == "__main__":
     url_files = locate_url_txt(data_path)
     valid_urls = generate_download_list(url_files)
     download_urls(valid_urls)
+    print("process finished")

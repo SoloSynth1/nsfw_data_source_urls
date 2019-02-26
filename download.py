@@ -5,6 +5,30 @@ import requests
 data_path = path.abspath("./raw_data")
 
 
+class threadsafe_iter:
+    """Takes an iterator/generator and makes it thread-safe by
+    serializing call to the `next` method of given iterator/generator.
+    """
+    def __init__(self, it):
+        self.it = it
+        self.lock = threading.Lock()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        with self.lock:
+            return self.it.next()
+
+
+def threadsafe_generator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
+
+
 def locate_url_txt(parent_path, url_files=None):
     files = [path.join(parent_path, file) for file in listdir(parent_path)]
     if not url_files:
@@ -18,6 +42,7 @@ def locate_url_txt(parent_path, url_files=None):
     return url_files
 
 
+@threadsafe_generator
 def url_generator(url_files):
     for file_path in url_files:
         with open(file_path, 'r') as f:

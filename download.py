@@ -55,38 +55,32 @@ def url_generator(url_files):
 
 
 def download_urls(valid_urls, thread_count=100):
-    threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(thread_count)]
+    threads = [threading.Thread(target=download, args=(valid_urls,)) for _ in range(thread_count)]
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
 
-def download_manager(url_generator):
+def download(url_generator, timeout=10, retries_max=1):
     while True:
         try:
             url, file_name = url_generator.next()
-            download(url, file_name)
+            print("{}  ==>  {}...".format(url, file_name))
+            retries = 0
+            while retries <= retries_max:
+                try:
+                    response = requests.get(url, timeout=timeout)
+                    if response.status_code < 400:
+                        write(response.content, file_name)
+                        break
+                    retries += 1
+                except Exception as e:
+                    print("error: {}".format(e))
+                    retries += 1
+                    continue
         except StopIteration:
             break
-
-
-def download(url, file_name, timeout=10, retries_max=1):
-    print("{}  ==>  {}...".format(url, file_name))
-    retries = 0
-    while retries <= retries_max:
-        try:
-            response = requests.get(url, timeout=timeout)
-            if response.status_code < 400:
-                write(response.content, file_name)
-                break
-            retries += 1
-        except Exception as e:
-            print("error: {}".format(e))
-            retries += 1
-            continue
-
-
 
 def get_file_name(url, file_path):
     return path.join(path.dirname(path.realpath(file_path)), url.split('?')[0].split('/')[-1])

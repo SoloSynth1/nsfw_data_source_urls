@@ -7,19 +7,28 @@ data_path = path.abspath("./raw_data")
 
 def locate_url_txt(parent_path):
     files = [path.join(parent_path, file) for file in listdir(parent_path)]
+    url_files = []
     for file in files:
         if path.isdir(file):
             locate_url_txt(file)
         elif path.basename(file) == "urls.txt":
             print("found {}".format(file))
-            download_urls(file)
+            url_files.append(file)
+            # download_urls(file)
+    valid_urls = generate_donwload_list(url_files)
+    download_urls(valid_urls)
 
 
-def download_urls(file_path, thread_count=300):
-    with open(file_path, 'r') as f:
-        urls = f.read().split('\n')
-    valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url, file_path))]
-    url_count = len(valid_urls)
+def generate_donwload_list(url_files):
+    for file_path in url_files:
+        with open(file_path, 'r') as f:
+            urls = f.read().split('\n')
+        valid_urls = [(url, get_file_name(url, file_path)) for url in urls if url and not path.isfile(get_file_name(url,file_path))]
+    print("URL list generation complete, {} files".format(len(valid_urls)))
+    return valid_urls
+
+
+def download_urls(valid_urls, thread_count=500):
     threads = [threading.Thread(target=download_manager, args=(valid_urls,)) for _ in range(min(thread_count, url_count))]
     for thread in threads:
         thread.start()

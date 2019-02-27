@@ -1,6 +1,6 @@
 import threading
 from os import path, listdir
-import requests
+import urllib3
 import argparse
 
 
@@ -71,19 +71,22 @@ def download_manager(url_generator):
             break
 
 
-def download(url, file_name, timeout=10, retries_max=1):
+def download(url, file_name, timeout=5.0, retries_max=1):
     print("{}  ==>  {}...".format(url, file_name))
     retries = 0
+    response = None
     while retries <= retries_max:
         try:
-            response = requests.get(url, timeout=timeout)
-            if response.status_code < 400:
-                write(response.content, file_name)
+            response = urllib3.PoolManager().request('GET', url, timeout=timeout)
+            if response.status < 400:
+                write(response.data, file_name)
                 break
+            retries += 1
         except Exception as e:
             print("error: {}".format(e))
-        finally:
             retries += 1
+            continue
+    del response
 
 
 def get_file_name(url, file_path):
@@ -103,6 +106,7 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
+    urllib3.disable_warnings()
     args = parse_arguments()
     url_files = locate_url_txt(data_path)
     url_gen = url_generator(url_files)

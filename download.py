@@ -2,6 +2,7 @@ import threading
 from os import path, listdir
 import urllib3
 import argparse
+import gc
 
 
 data_path = path.abspath("./raw_data")
@@ -87,6 +88,7 @@ def download(url, file_name, timeout=5.0, retries_max=1):
             retries += 1
             continue
     del response
+    gc.collect()
 
 
 def get_file_name(url, file_path):
